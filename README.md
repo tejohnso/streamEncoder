@@ -1,3 +1,10 @@
+PROGRAM EXECUTION
+=================
+
+execute the program with: `node transform.js mapping-directives-file input-text-file`
+
+run `node transform.js` to show available flags
+
 PROBLEM DESCRIPTION
 ===================
 
@@ -33,5 +40,3 @@ lowercase letters begin.  This is acceptable.
 
 The program will pipe the input text through a transform stream and then through an
 output pipe to stdout.
-
-execute the program as: `node transform.js mapping-input-file input-text-file`
