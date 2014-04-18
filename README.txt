@@ -21,13 +21,14 @@ unrecognized characters (including any uppercase) are output unchanged
 SOLUTION PLAN:
 Define a virtual keyboard as a two dimensional array
 Compute a second, transformed keyboard
-Generate a mapping represented as a single dimension array whose indeces represent
-input ascii keycodes (eg: arr[49] contains the mapping for '1')  But subtract 44
+Generate a mapping represented as a single dimension array whose indices represent
+input ascii keycodes (eg: arr[49] contains the mapping for '1')  Possibly subtract 44
 from each index so that it starts at index zero.  The comma key is the lowest key code.
-There will be a big gap in the array where the capital letters are along with some other unused key codes before the lowercase letters begin.  This is acceptable.
+There will be a big gap in the array where the capital letters are,
+along with some other unused key codes before the lowercase letters begin.  This is acceptable.
 
-The program will pipe the input text through a transform function and then through an
+The program will pipe the input text through a transform stream and then through an
 output pipe to stdout.
 
-execute the program as: node transform.js [input file] [input text]
+execute the program as: node transform.js input-file input-text
 

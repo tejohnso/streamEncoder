@@ -2,10 +2,13 @@
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
-var stdKbd = generateKeyboard();
-var mapKbd = generateMappedBoard(stdKbd);
 var stream = require('stream');
+var stdKbd = require('./standardKeyboard');
+var usageText = "Usage: node " + thisFile() + " transform-file data-file [--showmap]";
+var mapKbd = generateMappedBoard(stdKbd);
 var mapArr = [];
+
+if (mapKbd[0].length === 0) {return -1;}
 
 if (process.argv[4] === '--showmap') {
   printKeyboardMap();
@@ -41,8 +44,19 @@ KeyMap.prototype._transform = function(chunk) {
 
 var KeyMap = new KeyMap();
 KeyMap.pipe(process.stdout);
-fs.createReadStream(process.argv[3]).pipe(KeyMap);
+var dataStream = fs.createReadStream(process.argv[3]);
+dataStream.on('error', function(e) {
+  console.log("Error " + e.code + " on accessing file "  + e.path + "\n");
+  console.log(usageText);
+});
+
+dataStream.pipe(KeyMap);
 return;
+
+function thisFile() {
+  var thisFile = process.argv[1].split(path.sep);
+  return thisFile[thisFile.length - 1];
+}
 
 function printKeyboardMap() {
   var str;
@@ -62,21 +76,13 @@ function printKeyboardMap() {
   console.log('');
 }
 
-function generateKeyboard() {
-  var kbd = [];
-  kbd[0] = ['1','2','3','4','5','6','7','8','9','0'];
-  kbd[1] = ['q','w','e','r','t','y','u','i','o','p'];
-  kbd[2] = ['a','s','d','f','g','h','j','k','l',';'];
-  kbd[3] = ['z','x','c','v','b','n','m',',','.','/'];
-  return kbd;
-}
 
 function generateMappedBoard(stdKbd) {
   var directives = getTransformDirectives()
      ,mapKbd = [[],[],[],[]]
      ,shiftingBoard = [[],[],[],[]];
 
-  if (directives === '') {return;}
+  if (directives === '') {return mapKbd;}
 
   for (var i = 0; i < 4; i += 1) {
     for (var j = 0; j < 10; j += 1) {
@@ -145,10 +151,8 @@ function generateMappedBoard(stdKbd) {
   }
 
   function getTransformDirectives() {
-    var thisFile = process.argv[1].split(path.sep);
-    thisFile = thisFile[thisFile.length - 1];
     if (process.argv.length < 4) {
-      console.log("Usage: node " + thisFile + " transform-file data-file [--showmap]");
+      console.log(usageText);
       return '';
     }
 
@@ -156,6 +160,7 @@ function generateMappedBoard(stdKbd) {
       return fs.readFileSync(process.argv[2], {"encoding": "ascii"});
     } catch (e) {
       console.log("Error " + e.code + " on " + e.syscall + " of " + e.path + "\n");
+      console.log(usageText);
       return '';
     }
   }
