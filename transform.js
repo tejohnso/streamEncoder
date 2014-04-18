@@ -2,29 +2,31 @@
 var fs = require('fs')
    ,mappingDirectives
    ,mapArr = []
-   ,usageText = require('./lib/utils').usageText
    ,streamTransformer
    ,dataStream;
 
 try {
-  mappingDirectives = require('./lib/readDirectives');
+  mappingDirectives = require('./lib/mappingDirectives');
 } catch(e) {
-  console.error(e + '\n' + usageText);
+  console.error(e + '\n' + require('./lib/utils').usageText);
   return -1;
 }
 
-mappingDirectives = mappingDirectives.split(',').map(function(val) {
-  return val.trim().toUpperCase().replace('\n','');
+if (require('./lib/flags').compoundDirectives) {
+  mapArr = require('./lib/mappedKeyboardCompounding')(mappingDirectives);
+} else {
+  mapArr = require('./lib/mappedKeyboard')(mappingDirectives);
+}
+
+dataStream = fs.createReadStream(process.argv[3]);
+dataStream.on('error', function(e) {
+  console.log("Error " + e.code + " on accessing file " + 
+              e.path + "\n" + require('./lib/utils').usageText);
+  return -1;
 });
-mapArr = require('./lib/mappedKeyboard')(mappingDirectives);
 
 streamTransformer = require('./lib/TransformPipe')(mapArr);
 streamTransformer.pipe(process.stdout);
-dataStream = fs.createReadStream(process.argv[3]);
-dataStream.on('error', function(e) {
-  console.log("Error " + e.code + " on accessing file "  + e.path + "\n" + usageText);
-  return -1;
-});
 
 dataStream.pipe(streamTransformer);
 return;
