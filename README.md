@@ -2,6 +2,7 @@ PROGRAM EXECUTION
 =================
 
 execute the program with: `node transform.js mapping-directives-file input-text-file`
+eg: `node transform.js test/directives1.txt test/data1.txt`
 
 run `node transform.js` to show available flags
 
