@@ -8,6 +8,7 @@ function thisFile() {
 
 function printKeyboardMap(stdKbd, mapKbd) {
   var str;
+  console.log('');
   for (var i = 0; i < 4; i += 1) {
     str = '';
     for (var j = 0; j < 10; j += 1) {
@@ -24,5 +25,14 @@ function printKeyboardMap(stdKbd, mapKbd) {
   console.log('');
 }
 
+function iterateBoard(fn) {
+  for (var i = 0; i < 4; i += 1) {
+    for (var j = 0; j < 10; j += 1) {
+      fn(i, j);
+    }
+  }
+}
+
 module.exports.thisFile = thisFile;
 module.exports.printKeyboardMap = printKeyboardMap;
+module.exports.iterateBoard = iterateBoard;
