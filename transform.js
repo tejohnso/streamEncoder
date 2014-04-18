@@ -4,39 +4,70 @@ var path = require('path');
 var util = require('util');
 var stdKbd = generateKeyboard();
 var mapKbd = generateMappedBoard(stdKbd);
-
+var stream = require('stream');
 var mapArr = [];
-showBoard(stdKbd);
-util.print('\n' + fs.readFileSync(process.argv[2],'ascii'));
-showBoard(mapKbd);
 
-function showBoard(kbd) {
-  var str = '';
-  for (var i = 0; i < 4; i += 1) {
-    console.log('\n');
-    for (var j = 0; j < 10; j += 1) {
-      str = '00' + kbd[i][j] + ' ';
-      util.print(str.substr(str.length - 4));
-    }
-  }
+if (process.argv[4] === '--showmap') {
+  printKeyboardMap();
 }
 
-console.log('\n');
 for (var i = 0; i < 4; i += 1) {
   for (var j = 0; j < 10; j += 1) {
-    mapArr[stdKbd[i][j]] = mapKbd[i][j];
+    mapArr[stdKbd[i][j].charCodeAt(0)] = mapKbd[i][j];
   }
 }
 
-mapArr.forEach(function(val, idx) {util.print(idx + '->' + val + ',');});
-util.print('\n');
+var Transform = stream.Transform;
+
+function KeyMap(options) {
+  if (!(this instanceof KeyMap)) {
+    return new KeyMap(options);
+  }
+  Transform.call(this, options);
+}
+
+util.inherits(KeyMap, Transform);
+KeyMap.prototype._transform = function(chunk) {
+  var index;
+  for (var i = 0, j = chunk.length; i < j; i += 1) {
+    index = chunk[i];
+    if (mapArr[index]) {
+      this.push(mapArr[index]);
+    } else {
+      this.push(String.fromCharCode(index));
+    }
+  }
+};
+
+var KeyMap = new KeyMap();
+KeyMap.pipe(process.stdout);
+fs.createReadStream(process.argv[3]).pipe(KeyMap);
+return;
+
+function printKeyboardMap() {
+  var str;
+  for (var i = 0; i < 4; i += 1) {
+    str = '';
+    for (var j = 0; j < 10; j += 1) {
+      str += stdKbd[i][j] + ' ';
+    }
+
+    str += '  |   ';
+    for (j = 0; j < 10; j += 1) {
+      str += mapKbd[i][j] + ' ';
+    }
+
+    console.log(str);
+  }
+  console.log('');
+}
 
 function generateKeyboard() {
   var kbd = [];
-  kbd[0] = [49,50,51,52,53,54,55,56,57,48];
-  kbd[1] = [113,119,101,114,116,121,117,105,111,112];
-  kbd[2] = [97,115,100,102,103,104,106,107,108,59];
-  kbd[3] = [122,120,99,118,98,110,109,44,46,47];
+  kbd[0] = ['1','2','3','4','5','6','7','8','9','0'];
+  kbd[1] = ['q','w','e','r','t','y','u','i','o','p'];
+  kbd[2] = ['a','s','d','f','g','h','j','k','l',';'];
+  kbd[3] = ['z','x','c','v','b','n','m',',','.','/'];
   return kbd;
 }
 
@@ -117,7 +148,7 @@ function generateMappedBoard(stdKbd) {
     var thisFile = process.argv[1].split(path.sep);
     thisFile = thisFile[thisFile.length - 1];
     if (process.argv.length < 4) {
-      console.log("Usage: node " + thisFile + " [transform file] [data file]");
+      console.log("Usage: node " + thisFile + " transform-file data-file [--showmap]");
       return '';
     }
 
@@ -129,9 +160,4 @@ function generateMappedBoard(stdKbd) {
     }
   }
 }
-
-function generateMappingArray() {
-}
-
-generateMappingArray();
 
