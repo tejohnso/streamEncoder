@@ -1,33 +1,33 @@
 "use strict";
 var fs = require('fs');
-var stdKbd = require('./standardKeyboard')();
+var stdKbd = require('./lib/standardKeyboard')();
 var mapKbd;
-var mappingDirectives = require('./readDirectives');
+var mappingDirectives;
 var mapArr = [];
-var thisFile = require('./utils').thisFile;
-var printKeyboardMap = require('./utils').printKeyboardMap;
+var printKeyboardMap = require('./lib/utils').printKeyboardMap;
+var thisFile = require('./lib/utils').thisFile;
 var usageText = "Usage: node " + thisFile() + " transform-file data-file [--showmap]";
 var streamTransformer;
 var dataStream;
 
 try {
-  mappingDirectives = mappingDirectives();
+  mappingDirectives = require('./lib/readDirectives')();
 } catch(e) {
   console.error(e + '\n' + usageText);
   return -1;
 }
 
-mapKbd = require('./mappedKeyboard')(mappingDirectives);
+mapKbd = require('./lib/mappedKeyboard')(mappingDirectives);
 
 if (process.argv[4] && process.argv[4].substr(0,6) === '--show') {
   printKeyboardMap(stdKbd, mapKbd);
 }
 
-require('./utils').iterateBoard(function(i, j) {
+require('./lib/utils').iterateBoard(function(i, j) {
   mapArr[stdKbd[i][j].charCodeAt(0)] = mapKbd[i][j];
 });
 
-streamTransformer = require('./TransformPipe')(mapArr);
+streamTransformer = require('./lib/TransformPipe')(mapArr);
 streamTransformer.pipe(process.stdout);
 dataStream = fs.createReadStream(process.argv[3]);
 dataStream.on('error', function(e) {
