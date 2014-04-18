@@ -1,17 +1,23 @@
 "use strict";
 var fs = require('fs');
-var path = require('path');
-var util = require('util');
-var stream = require('stream');
 var stdKbd = require('./standardKeyboard');
-var usageText = "Usage: node " + thisFile() + " transform-file data-file [--showmap]";
-var mapKbd = generateMappedBoard(stdKbd);
+var mapKbd;
 var mapArr = [];
+var thisFile = require('./utils').thisFile;
+var printKeyboardMap = require('./utils').printKeyboardMap;
+var usageText = "Usage: node " + thisFile() + " transform-file data-file [--showmap]";
+var streamTransformer;
+var dataStream;
 
-if (mapKbd[0].length === 0) {return -1;}
+try {
+  mapKbd = generateMappedBoard(stdKbd);
+} catch(e) {
+  console.error(e + '\n' + usageText);
+  return -1;
+}
 
 if (process.argv[4] === '--showmap') {
-  printKeyboardMap();
+  printKeyboardMap(stdKbd, mapKbd);
 }
 
 for (var i = 0; i < 4; i += 1) {
@@ -20,69 +26,28 @@ for (var i = 0; i < 4; i += 1) {
   }
 }
 
-var Transform = stream.Transform;
-
-function KeyMap(options) {
-  if (!(this instanceof KeyMap)) {
-    return new KeyMap(options);
-  }
-  Transform.call(this, options);
-}
-
-util.inherits(KeyMap, Transform);
-KeyMap.prototype._transform = function(chunk) {
-  var index;
-  for (var i = 0, j = chunk.length; i < j; i += 1) {
-    index = chunk[i];
-    if (mapArr[index]) {
-      this.push(mapArr[index]);
-    } else {
-      this.push(String.fromCharCode(index));
-    }
-  }
-};
-
-var KeyMap = new KeyMap();
-KeyMap.pipe(process.stdout);
-var dataStream = fs.createReadStream(process.argv[3]);
+streamTransformer = require('./TransformPipe')(mapArr);
+streamTransformer.pipe(process.stdout);
+dataStream = fs.createReadStream(process.argv[3]);
 dataStream.on('error', function(e) {
-  console.log("Error " + e.code + " on accessing file "  + e.path + "\n");
-  console.log(usageText);
+  console.log("Error " + e.code + " on accessing file "  + e.path + "\n" + usageText);
 });
 
-dataStream.pipe(KeyMap);
+dataStream.pipe(streamTransformer);
 return;
 
-function thisFile() {
-  var thisFile = process.argv[1].split(path.sep);
-  return thisFile[thisFile.length - 1];
-}
-
-function printKeyboardMap() {
-  var str;
-  for (var i = 0; i < 4; i += 1) {
-    str = '';
-    for (var j = 0; j < 10; j += 1) {
-      str += stdKbd[i][j] + ' ';
-    }
-
-    str += '  |   ';
-    for (j = 0; j < 10; j += 1) {
-      str += mapKbd[i][j] + ' ';
-    }
-
-    console.log(str);
-  }
-  console.log('');
-}
 
 
 function generateMappedBoard(stdKbd) {
-  var directives = getTransformDirectives()
+  var directives
      ,mapKbd = [[],[],[],[]]
      ,shiftingBoard = [[],[],[],[]];
 
-  if (directives === '') {return mapKbd;}
+  try {
+    directives = getTransformDirectives();
+  } catch(e) {
+    throw e;
+  }
 
   for (var i = 0; i < 4; i += 1) {
     for (var j = 0; j < 10; j += 1) {
@@ -152,16 +117,13 @@ function generateMappedBoard(stdKbd) {
 
   function getTransformDirectives() {
     if (process.argv.length < 4) {
-      console.log(usageText);
-      return '';
+      throw Error('Insufficient arguments');
     }
 
     try {
       return fs.readFileSync(process.argv[2], {"encoding": "ascii"});
     } catch (e) {
-      console.log("Error " + e.code + " on " + e.syscall + " of " + e.path + "\n");
-      console.log(usageText);
-      return '';
+      throw Error(e.code + " on " + e.syscall + " file " + e.path);
     }
   }
 }
