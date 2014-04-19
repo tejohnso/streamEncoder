@@ -1,32 +1,43 @@
 "use strict";
-var fs = require('fs')
-   ,mappingDirectives
+var mappingDirectives
    ,mapArr = []
    ,streamTransformer
    ,dataStream;
 
-try {
-  mappingDirectives = require('./lib/mappingDirectives');
-} catch(e) {
-  console.error(e + '\n' + require('./lib/utils').usageText);
-  return -1;
-}
+mappingDirectives = getDirectivesFromFile();
+if (mappingDirectives instanceof Error) {return;}
 
-if (require('./lib/flags').compoundDirectives) {
-  mapArr = require('./lib/mappedKeyboardCompounding')(mappingDirectives);
-} else {
-  mapArr = require('./lib/mappedKeyboard')(mappingDirectives);
-}
+mapArr = setMapArray();
 
-dataStream = fs.createReadStream(process.argv[3]);
-dataStream.on('error', function(e) {
-  console.log("Error " + e.code + " on accessing file " + 
-              e.path + "\n" + require('./lib/utils').usageText);
-  return -1;
-});
+dataStream = setReadStream();
 
 streamTransformer = require('./lib/TransformPipe')(mapArr);
-streamTransformer.pipe(process.stdout);
 
-dataStream.pipe(streamTransformer);
-return;
+dataStream.pipe(streamTransformer).pipe(process.stdout);
+return 0;
+
+function getDirectivesFromFile() {
+  try {
+    return require('./lib/mappingDirectives');
+  } catch(e) {
+    console.error(e + '\n' + require('./lib/utils').usageText);
+    return e;
+  }
+}
+
+function setMapArray() {
+  if (require('./lib/flags').compoundDirectives) {
+    return require('./lib/mappedKeyboardCompounding')(mappingDirectives);
+  } else {
+    return require('./lib/mappedKeyboard')(mappingDirectives);
+  }
+}
+
+function setReadStream() {
+  var dataStream = require('fs').createReadStream(process.argv[3]);
+  dataStream.on('error', function(e) {
+    console.log("Error " + e.code + " on accessing file " +
+                e.path + "\n" + require('./lib/utils').usageText);
+  });
+  return dataStream;
+}
