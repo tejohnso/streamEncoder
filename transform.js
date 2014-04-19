@@ -34,9 +34,14 @@ function setMapArray() {
 }
 
 function setReadStream() {
-  var dataStream = require('fs').createReadStream(process.argv[3]);
+  var dataStream;
+  if (!process.argv[3] || process.argv[3].substr(0,1) === '-') {
+    return process.stdin;
+  }
+
+  dataStream = require('fs').createReadStream(process.argv[3]);
   dataStream.on('error', function(e) {
-    console.log("Error " + e.code + " on accessing file " +
+    console.log("Error " + e.code + " on file " +
                 e.path + "\n" + require('./lib/utils').usageText);
   });
   return dataStream;

@@ -4,7 +4,9 @@ PROGRAM EXECUTION
 execute the program with: `node transform.js mapping-directives-file input-text-file`
 eg: `node transform.js test/directives1.txt test/data1.txt`
 
-run `node transform.js` to show available flags
+run `node transform.js` to show available flags.
+
+The input text file may be ommitted for input from stdin.
 
 PROBLEM DESCRIPTION
 ===================
@@ -41,3 +43,7 @@ lowercase letters begin.  This is acceptable.
 
 The program will pipe the input text through a transform stream and then through an
 output pipe to stdout.
+
+Note that stdout is **blocking** in node on linux even if used as a pipe.
+This isn't really important in this case but worth noting.
+If it were an issue, stdout could be redirected to an output file.
